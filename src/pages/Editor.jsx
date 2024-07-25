@@ -40,6 +40,15 @@ const Editor = () => {
         }
         setClients(allUsers);
       });
+
+      //user disconnecting
+      socketRef.current.on("disconnected", ({ username, socket_id }) => {
+        toast.success(`${username} leaved rooom`);
+        //removing the user from sidepanel list
+        setClients((prev) => {
+          return prev.filter((client) => client.socket_id != socket_id);
+        });
+      });
     };
     // console.log(init);
     init();
