@@ -55,7 +55,7 @@ const Editor = () => {
           </div>
         </div>
       </div>
-      <div className="editplaygr bg-purple-100 pt-12 w-full p-5">
+      <div className="editplaygr bg-neutral-900   w-full p-2">
         <EditorPlayground />
       </div>
     </div>
