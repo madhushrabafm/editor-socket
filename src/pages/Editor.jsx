@@ -1,38 +1,56 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ClientBox from "../components/ClientBox";
 import EditorPlayground from "../components/EditorPlayground";
+import { initSocket } from "../socket";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Editor = () => {
-  const [clients, setclients] = useState([
-    {
-      socketId: 1,
-      username: "madhu das",
-    },
-    {
-      socketId: 2,
-      username: "john doe",
-    },
-    {
-      socketId: 3,
-      username: "jane smith",
-    },
-    {
-      socketId: 4,
-      username: "alice wonder",
-    },
-    {
-      socketId: 5,
-      username: "bob builder",
-    },
-    {
-      socketId: 6,
-      username: "charlie b",
-    },
-    {
-      socketId: 7,
-      username: "daisy duck",
-    },
-  ]);
+  const socketRef = useRef(null);
+  const location = useLocation(); // data received from url
+  const { roomid } = useParams(); //id from url
+  const nav = useNavigate();
+  const [clients, setClients] = useState([]);
+
+  useEffect(() => {
+    const init = async () => {
+      socketRef.current = await initSocket();
+
+      // errors
+      socketRef.current.on("connect_error", (er) => handleError(er));
+      socketRef.current.on("connect_failed", (er) => handleError(er));
+      const handleError = () => {
+        toast.error("socket not connected >>>");
+        nav("/");
+      };
+
+      // emit
+      socketRef.current.emit("joinRoom", {
+        roomid,
+        username: location.state?.username,
+      });
+      // console.log(location);
+      // on - when new user joins room , for sendinf notif to others
+      socketRef.current.on("joined", ({ allUsers, username, socketid }) => {
+        console.log(allUsers);
+        // console.log(username);
+        if (username !== location.state?.username) {
+          toast.success(`${username} joined the rooom`);
+          console.log("wherhhrnjr");
+        }
+        setClients(allUsers);
+      });
+    };
+    // console.log(init);
+    init();
+  }, []);
+
+  // if no room id present then user will go to /
+  if (!location.state) {
+    nav("/");
+  }
+
+  console.log(clients);
   return (
     <div className="allwrap flex justify-between min-h-screen">
       <div className="sidebar text-white bg-neutral-800 w-[20rem] p-5">
@@ -44,9 +62,10 @@ const Editor = () => {
             <div className="connextions mt-12">connected</div>
             <div className="allbox flex justify-between  gap-3 flex-wrap">
               {/* <ClientBox /> */}
-              {clients.map((client) => (
-                <ClientBox username={client.username} key={client.socketId} />
-              ))}
+              {clients &&
+                clients.map((client) => (
+                  <ClientBox username={client.username} key={client.socketId} />
+                ))}
             </div>
           </div>
           <div className="bottom mb-12 flex-col space-y-4">
