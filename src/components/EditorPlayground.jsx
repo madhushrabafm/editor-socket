@@ -6,10 +6,11 @@ import "codemirror/addon/edit/closebrackets";
 import "codemirror/lib/codemirror.css";
 import CodeMirror from "codemirror";
 
-function Editor() {
+function EditorPlayground({ socketRef, roomId, onCodeChange }) {
   const editorRef = useRef(null);
+
   useEffect(() => {
-    const init = async () => {
+    const initEditor = () => {
       const editor = CodeMirror.fromTextArea(
         document.getElementById("realtimeEditor"),
         {
@@ -18,27 +19,61 @@ function Editor() {
           autoCloseTags: true,
           autoCloseBrackets: true,
           lineNumbers: true,
-          fontSize: "38px",
-          css: {
-            ".CodeMirror-lines": {
-              fontSize: "28px",
-            },
-          },
         }
       );
-      // for sync the code
-      editorRef.current = editor;
 
       editor.setSize(null, "100%");
+      editorRef.current = editor;
+
+      editor.on("change", (instance, changes) => {
+        const { origin } = changes;
+        const code = instance.getValue();
+        onCodeChange(code);
+
+        if (origin !== "setValue") {
+          socketRef.current.emit("code-change", {
+            roomId,
+            code,
+          });
+        }
+      });
     };
 
-    init();
-  }, []);
+    initEditor();
+
+    if (socketRef.current) {
+      // Listen for code-change event from other clients
+      socketRef.current.on("code-change", ({ code }) => {
+        if (editorRef.current) {
+          const currentCode = editorRef.current.getValue();
+          if (currentCode !== code) {
+            editorRef.current.setValue(code);
+          }
+        }
+      });
+
+      // Listen for requestCodeSync event to provide code to new users
+      socketRef.current.on("requestCodeSync", () => {
+        const code = editorRef.current.getValue();
+        socketRef.current.emit("syncCode", {
+          socketId: socketRef.current.id,
+          code,
+        });
+      });
+
+      // Cleanup listeners on component unmount
+      return () => {
+        socketRef.current.off("code-change");
+        socketRef.current.off("requestCodeSync");
+      };
+    }
+  }, [socketRef, roomId, onCodeChange]);
+
   return (
-    <div style={{ height: "96vh" }} className="overflow-hidden">
+    <div style={{ height: "100vh" }} className="overflow-hidden">
       <textarea id="realtimeEditor" className="text-lg"></textarea>
     </div>
   );
 }
 
-export default Editor;
+export default EditorPlayground;
