@@ -4,7 +4,7 @@ const ClientBox = ({ username }) => {
   const getInitials = (username) => {
     return username
       .split(" ")
-      .map((name) => name[0].toUpperCase())
+      .map((name) => name[0]?.toUpperCase())
       .join("");
   };
   return (
