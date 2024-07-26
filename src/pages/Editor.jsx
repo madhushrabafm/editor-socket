@@ -59,6 +59,20 @@ const Editor = () => {
     nav("/");
   }
 
+  const copyRoomId = async () => {
+    try {
+      await navigator.clipboard.writeText(roomid);
+      toast.success(`Room Id is Copied`);
+    } catch (error) {
+      console.log(error);
+      toast.error("unable to copy the room Id");
+    }
+  };
+
+  const leaveRoom = async () => {
+    nav("/");
+  };
+
   console.log(clients);
   return (
     <div className="allwrap flex justify-between min-h-screen">
@@ -72,14 +86,24 @@ const Editor = () => {
             <div className="allbox flex justify-between  gap-3 flex-wrap">
               {/* <ClientBox /> */}
               {clients &&
-                clients.map((client) => (
-                  <ClientBox username={client.username} key={client.socketId} />
+                clients.map((client, idx) => (
+                  <ClientBox username={client.username} key={idx} />
                 ))}
             </div>
           </div>
           <div className="bottom mb-12 flex-col space-y-4">
-            <div className=" bg-rose-700 p-2 rounded">share room id</div>
-            <div className="  rounded bg-rose-700 p-2  ">leave</div>
+            <div
+              className=" bg-rose-700 p-2 rounded cursor-pointer"
+              onClick={copyRoomId}
+            >
+              share room id
+            </div>
+            <div
+              className="  rounded bg-rose-700 p-2  cursor-pointer "
+              onClick={leaveRoom}
+            >
+              leave
+            </div>
           </div>
         </div>
       </div>
